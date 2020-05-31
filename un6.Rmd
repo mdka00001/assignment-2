@@ -1,0 +1,116 @@
+---
+title: "Assignment 2"
+author: "Md Adnan, Ahmad Omar"
+date: "5/28/2020"
+output: html_document
+---
+```{r}
+library("dplyr")
+library("matrixStats")
+library("ggplot2")
+library("dbplyr")
+library("tidyverse")
+library("tidyr")
+
+```
+
+Exercise 2.1
+
+(a)The "methylation.csv" has been sorted and a numeric data frame has been created with floating-point number conversion. Missing values were replaced with 0.
+
+```{r}
+met <- read.csv("A://AI/Process/methylation.csv", sep = ";", na.strings = ".", stringsAsFactors = F, 
+                dec = ",")
+head(met)
+
+
+met[,8:26][is.na(met[,8:26])] <- 0
+```
+
+(b) Average methylation values of genes in different cell types are generated. The average values partially satisfies the development succession shown in "Figure 1" of problem sheet. CD8, CD4, B_Cell exhibits the highest methylation, followed by CMP and CLP. But, Successor of GMP (Eryth, Granu and Mono) showest the lowest methylation value compared to their predecessor cell lines.  
+
+```{r}
+#Average methylation per cell type
+a <- data.frame(sort(colMeans(met[,8:26])))
+
+#Standard error
+b <- data.frame(sort(sapply(met[,8:26], function(x)sd(x)/sqrt(length(x)))))
+
+c <- cbind(a, b)
+
+
+names(c)[1] <- "average methylation"
+names(c)[2] <- "Standard error"
+
+#Boxplot showing methylation in different cells
+
+
+
+
+met2 <- met[,8:26]
+met2 <- cbind(met$chrom, met2)
+
+boxplot(met2[-1], col="blue", par(las=2), ylab="methylation", xlab="cell type", 
+        main="difference of methylation in cell types")
+```
+
+
+Here we can see from the figure below chrY has the highest methylation rate followed by chrX. Here, chr11 and chr19 on the other hand exhibits the lowest methylation value. Each cells exhibits almost simillar pattern. Cells generating from CMP loses its methylation rate over developmental stages.
+
+```{r}
+
+#here i created a new dataframe by calculting avg methylation for each chromosome
+totalavg <- data.frame(cbind(chr1=(colMeans(((filter(met2, met$chrom == "chr1")))[,2:20]))),
+                       chr2=(colMeans(((filter(met2, met$chrom == "chr2")))[,2:20])),
+                       chr3=(colMeans(((filter(met2, met$chrom == "chr3")))[,2:20])),
+                       chr4=(colMeans(((filter(met2, met$chrom == "chr4")))[,2:20])),
+                       chr5=(colMeans(((filter(met2, met$chrom == "chr5")))[,2:20])),
+                       chr6=(colMeans(((filter(met2, met$chrom == "chr6")))[,2:20])),
+                       chr7=(colMeans(((filter(met2, met$chrom == "chr7")))[,2:20])),
+                       chr8=(colMeans(((filter(met2, met$chrom == "chr8")))[,2:20])),
+                       chr9=(colMeans(((filter(met2, met$chrom == "chr9")))[,2:20])),
+                       chr10=(colMeans(((filter(met2, met$chrom == "chr10")))[,2:20])),
+                       chr11=(colMeans(((filter(met2, met$chrom == "chr11")))[,2:20])),
+                       chr12=(colMeans(((filter(met2, met$chrom == "chr12")))[,2:20])),
+                       chr13=(colMeans(((filter(met2, met$chrom == "chr13")))[,2:20])),
+                       chr14=(colMeans(((filter(met2, met$chrom == "chr14")))[,2:20])),
+                       chr15=(colMeans(((filter(met2, met$chrom == "chr15")))[,2:20])),
+                       chr16=(colMeans(((filter(met2, met$chrom == "chr16")))[,2:20])),
+                       chr17=(colMeans(((filter(met2, met$chrom == "chr17")))[,2:20])),
+                       chr19=(colMeans(((filter(met2, met$chrom == "chr19")))[,2:20])),
+                       chrX=(colMeans(((filter(met2, met$chrom == "chrX")))[,2:20])),
+                       chrY=(colMeans(((filter(met2, met$chrom == "chrY")))[,2:20])))
+d <- totalavg
+names <- rownames(d)
+rownames(d) <- NULL
+data <- cbind(names,d)
+
+dftall <- data %>% pivot_longer(names_to = "chrom", values_to = "methylation", chr1:chrY)
+ggplot(dftall, aes(methylation, chrom, fill=names) )+geom_col(position="dodge")
+
+
+
+```
+```{r}
+#clustering
+cls <- as.data.frame(t(totalavg))
+rownames(cls) <- c()
+
+clus_sc <- as.data.frame(scale(cls))
+
+#distance
+dist_mat <- dist(clus_sc, method = "euclidean")
+print(dist_mat, digits = 2)
+
+#linkage
+
+hclust_avg <- hclust(dist_mat, method = "average")
+
+plot(hclust_avg)
+
+```
+
+
+```
+
+
